@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Strategic Lakehouse - KPI</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --background: #f6f8fb;
+        --surface: #ffffff;
+        --text: #16202a;
+        --muted: #526070;
+        --accent: #005fcc;
+        --border: #c8d1dc;
+      }
+
+      body {
+        margin: 0;
+        background: var(--background);
+        color: var(--text);
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1.5;
+      }
+
+      header,
+      main {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      header {
+        padding-top: 36px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 2rem;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      button {
+        margin-top: 20px;
+        border: 2px solid var(--accent);
+        border-radius: 6px;
+        background: var(--accent);
+        color: #ffffff;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 700;
+        padding: 10px 14px;
+      }
+
+      button:focus-visible {
+        outline: 4px solid #ffbf47;
+        outline-offset: 3px;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .kpi-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 18px;
+      }
+
+      .kpi-card h2 {
+        color: var(--muted);
+        font-size: 0.95rem;
+        margin: 0 0 8px;
+      }
+
+      .kpi-value {
+        color: var(--text);
+        font-size: 1.8rem;
+        font-weight: 700;
+        overflow-wrap: anywhere;
+      }
+
+      .status {
+        margin-top: 18px;
+        min-height: 24px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Strategic Lakehouse</h1>
+      <p>Tableau de bord minimal exposant les KPI issus de la couche Gold.</p>
+      <button type="button" id="refresh-button">Actualiser les KPI</button>
+    </header>
+
+    <main>
+      <section aria-labelledby="kpi-title">
+        <h2 id="kpi-title">Indicateurs BI</h2>
+        <div class="kpi-grid" id="kpi-grid" aria-live="polite"></div>
+        <p class="status" id="status" role="status"></p>
+      </section>
+    </main>
+
+    <script>
+      const labels = {
+        total_revenue: "Chiffre d'affaires total",
+        order_count: "Nombre de commandes",
+        quantity_sold: "Quantite vendue",
+        average_order_value: "Panier moyen",
+        top_country: "Top pays",
+        top_category: "Top categorie"
+      };
+
+      const euroFormatter = new Intl.NumberFormat("fr-FR", {
+        style: "currency",
+        currency: "EUR",
+        maximumFractionDigits: 0
+      });
+
+      const numberFormatter = new Intl.NumberFormat("fr-FR");
+
+      function formatValue(key, value) {
+        if (key === "total_revenue" || key === "average_order_value") {
+          return euroFormatter.format(value);
+        }
+        if (typeof value === "number") {
+          return numberFormatter.format(value);
+        }
+        return value;
+      }
+
+      async function loadKpis() {
+        const grid = document.querySelector("#kpi-grid");
+        const status = document.querySelector("#status");
+        status.textContent = "Chargement des KPI...";
+
+        try {
+          const response = await fetch("/api/kpis");
+          if (!response.ok) {
+            throw new Error("API indisponible");
+          }
+          const kpis = await response.json();
+          grid.innerHTML = "";
+
+          Object.entries(labels).forEach(([key, label]) => {
+            const article = document.createElement("article");
+            article.className = "kpi-card";
+            article.innerHTML = `
+              <h2>${label}</h2>
+              <div class="kpi-value">${formatValue(key, kpis[key])}</div>
+            `;
+            grid.appendChild(article);
+          });
+
+          status.textContent = "KPI charges depuis la couche Gold.";
+        } catch (error) {
+          status.textContent = "Impossible de charger les KPI. Lancez le pipeline puis redemarrez l'API.";
+        }
+      }
+
+      document.querySelector("#refresh-button").addEventListener("click", loadKpis);
+      loadKpis();
+    </script>
+  </body>
+</html>
