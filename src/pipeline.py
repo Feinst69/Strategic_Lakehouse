@@ -2,6 +2,7 @@ from pathlib import Path
 
 from src.ingestion.bronze import ingest_raw_to_bronze
 from src.transformation.gold import build_gold
+from src.transformation.quality import build_data_quality_report
 from src.transformation.silver import build_silver
 
 
@@ -28,6 +29,11 @@ def run_pipeline() -> None:
     print("Gold: calcul des KPI BI")
     gold_outputs = build_gold(silver_dir, gold_dir)
     for name, path in gold_outputs.items():
+        print(f"  - {name}: {path.relative_to(PROJECT_ROOT)}")
+
+    print("Gouvernance: qualite des donnees et lineage")
+    governance_outputs = build_data_quality_report(raw_dir, silver_dir, gold_dir)
+    for name, path in governance_outputs.items():
         print(f"  - {name}: {path.relative_to(PROJECT_ROOT)}")
 
     print("Pipeline termine.")

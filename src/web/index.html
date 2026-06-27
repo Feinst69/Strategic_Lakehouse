@@ -61,6 +61,10 @@
         outline-offset: 3px;
       }
 
+      .dashboard-section {
+        margin-bottom: 34px;
+      }
+
       .kpi-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -68,7 +72,8 @@
         margin-top: 16px;
       }
 
-      .kpi-card {
+      .kpi-card,
+      .quality-panel {
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -92,6 +97,30 @@
         margin-top: 18px;
         min-height: 24px;
       }
+
+      .quality-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 16px 0 0;
+        padding: 0;
+      }
+
+      .quality-list div {
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+      }
+
+      .quality-list dt {
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .quality-list dd {
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin: 4px 0 0;
+      }
     </style>
   </head>
   <body>
@@ -102,10 +131,18 @@
     </header>
 
     <main>
-      <section aria-labelledby="kpi-title">
+      <section class="dashboard-section" aria-labelledby="kpi-title">
         <h2 id="kpi-title">Indicateurs BI</h2>
         <div class="kpi-grid" id="kpi-grid" aria-live="polite"></div>
         <p class="status" id="status" role="status"></p>
+      </section>
+
+      <section class="dashboard-section" aria-labelledby="quality-title">
+        <h2 id="quality-title">Qualite des donnees</h2>
+        <div class="quality-panel">
+          <p>Controles de gouvernance generes pendant le pipeline Gold.</p>
+          <dl class="quality-list" id="quality-list" aria-live="polite"></dl>
+        </div>
       </section>
     </main>
 
@@ -117,6 +154,15 @@
         average_order_value: "Panier moyen",
         top_country: "Top pays",
         top_category: "Top categorie"
+      };
+
+      const qualityLabels = {
+        sales_row_retention_percent: "Conservation des lignes ventes",
+        customer_match_percent: "Correspondance clients",
+        product_match_percent: "Correspondance produits",
+        duplicate_sales_removed: "Doublons ventes detectes",
+        invalid_order_dates: "Dates de commande invalides",
+        missing_customer_matches: "Ventes sans client rattache"
       };
 
       const euroFormatter = new Intl.NumberFormat("fr-FR", {
@@ -166,8 +212,42 @@
         }
       }
 
+      async function loadDataQuality() {
+        const list = document.querySelector("#quality-list");
+
+        try {
+          const response = await fetch("/api/data-quality");
+          if (!response.ok) {
+            throw new Error("Rapport qualite indisponible");
+          }
+          const report = await response.json();
+          const values = {
+            sales_row_retention_percent: `${report.quality_score.sales_row_retention_percent} %`,
+            customer_match_percent: `${report.quality_score.customer_match_percent} %`,
+            product_match_percent: `${report.quality_score.product_match_percent} %`,
+            duplicate_sales_removed: numberFormatter.format(report.quality_controls.duplicate_sales_removed),
+            invalid_order_dates: numberFormatter.format(report.quality_controls.invalid_order_dates),
+            missing_customer_matches: numberFormatter.format(report.quality_controls.missing_customer_matches)
+          };
+
+          list.innerHTML = "";
+          Object.entries(qualityLabels).forEach(([key, label]) => {
+            const item = document.createElement("div");
+            item.innerHTML = `
+              <dt>${label}</dt>
+              <dd>${values[key]}</dd>
+            `;
+            list.appendChild(item);
+          });
+        } catch (error) {
+          list.innerHTML = "<div><dt>Rapport qualite</dt><dd>Indisponible</dd></div>";
+        }
+      }
+
       document.querySelector("#refresh-button").addEventListener("click", loadKpis);
+      document.querySelector("#refresh-button").addEventListener("click", loadDataQuality);
       loadKpis();
+      loadDataQuality();
     </script>
   </body>
 </html>

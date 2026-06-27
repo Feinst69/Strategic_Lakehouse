@@ -40,3 +40,29 @@ def get_kpis() -> dict[str, float | int | str]:
 
     with kpi_file.open(encoding="utf-8") as file:
         return json.load(file)
+
+
+@app.get("/api/data-quality")
+def get_data_quality() -> dict:
+    quality_file = GOLD_DIR / "data_quality_report.json"
+    if not quality_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Rapport qualite introuvable. Lancez d'abord: python -m src.pipeline",
+        )
+
+    with quality_file.open(encoding="utf-8") as file:
+        return json.load(file)
+
+
+@app.get("/api/lineage")
+def get_lineage() -> dict:
+    lineage_file = GOLD_DIR / "lineage.json"
+    if not lineage_file.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="Lineage introuvable. Lancez d'abord: python -m src.pipeline",
+        )
+
+    with lineage_file.open(encoding="utf-8") as file:
+        return json.load(file)

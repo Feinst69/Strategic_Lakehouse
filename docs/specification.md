@@ -37,6 +37,8 @@ La couche Gold contient les donnees pretes pour la BI.
 | `gold/revenue_by_country.csv` | chiffre d'affaires par pays |
 | `gold/revenue_by_category.csv` | chiffre d'affaires par categorie |
 | `gold/revenue_by_month.csv` | chiffre d'affaires par mois |
+| `gold/data_quality_report.json` | controles qualite, completude et minimisation RGPD |
+| `gold/lineage.json` | provenance des sorties Gold |
 
 Justification : cette couche evite aux consommateurs BI de refaire les jointures et les calculs. Elle fournit des donnees stables, comprehensibles et directement exploitables.
 
@@ -51,6 +53,8 @@ Justification : cette couche evite aux consommateurs BI de refaire les jointures
 | API BI | Exposer les KPI au format JSON | `/api/kpis` retourne HTTP 200 avec les indicateurs | Must |
 | Dashboard web | Afficher les KPI dans une page HTML | les KPI sont visibles depuis `/` | Should |
 | Accessibilite de base | Respecter HTML semantique, contraste et focus visible | navigation clavier possible et structure lisible | Should |
+| Rapport qualite | Exposer les controles de qualite des donnees | `/api/data-quality` retourne les controles du pipeline | Should |
+| Lineage | Documenter la provenance des KPI | `/api/lineage` relie KPI Gold et sources Raw/Silver | Should |
 | Gestion fine des droits | Ajouter roles et permissions par profil | controle d'acces documente pour version cible | Could |
 
 ## Exigences non fonctionnelles
